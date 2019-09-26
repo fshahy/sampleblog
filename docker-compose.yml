@@ -1,0 +1,45 @@
+version: '3'
+
+services: 
+  db:
+    image: postgres:latest
+    expose:
+      - "5432"
+    restart: always
+    environment:
+      POSTGRES_DB: blogdb
+      POSTGRES_TEST_DB: blogdb_test
+      POSTGRES_PASSWORD: secret
+    networks:
+      - blog-net      
+    volumes:
+      - ./start.sh:/docker-entrypoint-initdb.d/start.sh
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: blog-api:1.0.0
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - blog-net
+    external_links:
+        - db:db
+    environment:
+      POSTGRES_DB: blogdb
+      POSTGRES_TEST_DB: blogdb_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_HOST: db
+    depends_on:
+      - db
+
+volumes:
+  database_data:
+    driver: local
+
+networks:
+  blog-net:
+    driver: bridge
